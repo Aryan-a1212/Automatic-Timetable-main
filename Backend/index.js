@@ -1,41 +1,40 @@
-const dotenv = require("dotenv");
-dotenv.config(); // Load .env variables
-
 const express = require('express');
+const multer = require('multer');
 const cors = require('cors');
 const mongoose = require('mongoose');
-const multer = require('multer');
-
-// Import routes
-const userRoutes = require('./router/user.routes');
-const uploadRoutes = require('./router/upload.routes');
+const dotenv = require('dotenv');
+dotenv.config();
 
 const app = express();
-const PORT = process.env.PORT || 5001;
+const PORT = process.env.PORT || 5000;
 
-// Middleware
 app.use(cors());
 app.use(express.json());
 
-// Multer config (for file upload handling)
-const storage = multer.memoryStorage(); // Store uploaded files in memory
+mongoose.connect(process.env.MONGO_URI)
+  .then(() => console.log("✅ MongoDB Connected"))
+  .catch(err => console.error("❌ MongoDB Error:", err));
+
+// ✅ Multer config
+const storage = multer.memoryStorage();
 const upload = multer({ storage });
 
-// ✅ Connect to MongoDB
-mongoose.connect(process.env.MONGO_URI)
-  .then(() => console.log('MongoDB connected'))
-  .catch(err => console.error('MongoDB connection error:', err));
+// 1. Load the controller factory
+const uploadControllerFactory = require('./controllers/uploadController');
+// 2. Create the controller instance, passing the 'upload' middleware
+const uploadController = uploadControllerFactory(upload);
 
-// ✅ API Routes
-app.use('/api/user', userRoutes); // <-- fixed this: was /api/users
-app.use('/api/upload', uploadRoutes(upload)); // pass multer instance
+// 3. Load the routes factory and pass the created controller to it
+const userRoutes = require('./router/user.routes');
+const uploadRoutes = require('./router/upload.routes')(uploadController);
 
-// Test route
+app.use('/api/user', userRoutes);
+app.use('/api/upload', uploadRoutes);
+
 app.get('/', (req, res) => {
-  res.send('TRAE AI Backend API');
+  res.send("TRAE AI Backend API");
 });
 
-// Start server
 app.listen(PORT, () => {
-  console.log(`TRAE AI backend running on http://localhost:${PORT}`);
+  console.log(`🚀 Server running on http://localhost:${PORT}`);
 });
