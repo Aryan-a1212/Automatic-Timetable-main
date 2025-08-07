@@ -83,6 +83,10 @@ module.exports = (upload) => {
             if (typeof t.subject_preferences === 'string') {
               t.subject_preferences = t.subject_preferences.split(',').map(s => s.trim());
             }
+            // Add this block to handle email field if it's an object (e.g., from Excel hyperlink)
+            if (typeof t.email === 'object' && t.email !== null && t.email.text) {
+              t.email = t.email.text;
+            }
           });
         }
 

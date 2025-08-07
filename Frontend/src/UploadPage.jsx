@@ -1,5 +1,4 @@
 import React, { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
 import './UploadPage.css';
 
 const UploadPage = () => {
@@ -7,8 +6,6 @@ const UploadPage = () => {
   const [subjectFile, setSubjectFile] = useState(null);
   const [roomFile, setRoomFile] = useState(null);
   const [fixedSlotFile, setFixedSlotFile] = useState(null);
-  const [uploading, setUploading] = useState(false); // ✅ Track upload state
-  const navigate = useNavigate();
 
   const handleFileChange = (setter) => (event) => {
     setter(event.target.files[0]);
@@ -20,9 +17,9 @@ const UploadPage = () => {
       return;
     }
 
-    setUploading(true); // ✅ Prevent double click
-
     const formData = new FormData();
+
+    // Correct field names expected by Multer
     const fieldMap = {
       teachers: 'teachersFile',
       subjects: 'subjectsFile',
@@ -33,26 +30,19 @@ const UploadPage = () => {
     const fieldName = fieldMap[type];
     if (!fieldName) {
       alert('Invalid upload type');
-      setUploading(false);
       return;
     }
 
     formData.append(fieldName, file);
 
     try {
-      const response = await fetch(`http://localhost:5001/api/upload/${type}`, {
+      const response = await fetch(`http://localhost:5000/api/upload/${type}`, {
         method: 'POST',
         body: formData,
-        cache: 'no-cache', // ✅ prevent stale form
-        credentials: 'same-origin',
       });
 
-      let data;
-      try {
-        data = await response.json();
-      } catch (jsonErr) {
-        data = { message: 'No response data' };
-      }
+      const responseText = await response.text();
+      const data = responseText ? JSON.parse(responseText) : {};
 
       if (response.ok) {
         alert(data.message || 'File uploaded successfully!');
@@ -66,85 +56,109 @@ const UploadPage = () => {
       console.error(`Network error while uploading ${type} file:`, error);
       alert(`Network error: ${error.message}`);
     }
-
-    setUploading(false);
   };
 
   return (
     <div className="upload-page-container">
       <h1>Upload Your Timetable Data</h1>
       <div className="upload-sections">
+
         {/* Teachers */}
-        <UploadCard
-          title="Teachers File"
-          file={teacherFile}
-          id="teacherFile"
-          setFile={setTeacherFile}
-          onUpload={() => handleUpload(teacherFile, 'teachers')}
-          uploading={uploading}
-        />
+        <div className="upload-card">
+          <div className="file-icon">📄</div>
+          <h3>Teachers File</h3>
+          <input
+            type="file"
+            accept=".xls,.xlsx,.csv"
+            onChange={handleFileChange(setTeacherFile)}
+            className="file-input"
+            id="teacherFile"
+          />
+          <label htmlFor="teacherFile" className="upload-button">
+            {teacherFile ? teacherFile.name : 'Choose File'}
+          </label>
+          <button
+            onClick={() => handleUpload(teacherFile, 'teachers')}
+            className="upload-button"
+            disabled={!teacherFile}
+          >
+            Upload
+          </button>
+        </div>
 
         {/* Subjects */}
-        <UploadCard
-          title="Subjects File"
-          file={subjectFile}
-          id="subjectFile"
-          setFile={setSubjectFile}
-          onUpload={() => handleUpload(subjectFile, 'subjects')}
-          uploading={uploading}
-        />
+        <div className="upload-card">
+          <div className="file-icon">📄</div>
+          <h3>Subjects File</h3>
+          <input
+            type="file"
+            accept=".xls,.xlsx,.csv"
+            onChange={handleFileChange(setSubjectFile)}
+            className="file-input"
+            id="subjectFile"
+          />
+          <label htmlFor="subjectFile" className="upload-button">
+            {subjectFile ? subjectFile.name : 'Choose File'}
+          </label>
+          <button
+            onClick={() => handleUpload(subjectFile, 'subjects')}
+            className="upload-button"
+            disabled={!subjectFile}
+          >
+            Upload
+          </button>
+        </div>
 
         {/* Rooms */}
-        <UploadCard
-          title="Rooms File"
-          file={roomFile}
-          id="roomFile"
-          setFile={setRoomFile}
-          onUpload={() => handleUpload(roomFile, 'rooms')}
-          uploading={uploading}
-        />
+        <div className="upload-card">
+          <div className="file-icon">📄</div>
+          <h3>Rooms File</h3>
+          <input
+            type="file"
+            accept=".xls,.xlsx,.csv"
+            onChange={handleFileChange(setRoomFile)}
+            className="file-input"
+            id="roomFile"
+          />
+          <label htmlFor="roomFile" className="upload-button">
+            {roomFile ? roomFile.name : 'Choose File'}
+          </label>
+          <button
+            onClick={() => handleUpload(roomFile, 'rooms')}
+            className="upload-button"
+            disabled={!roomFile}
+          >
+            Upload
+          </button>
+        </div>
 
         {/* Fixed Slots */}
-        <UploadCard
-          title="Fixed Slots File"
-          file={fixedSlotFile}
-          id="fixedSlotFile"
-          setFile={setFixedSlotFile}
-          onUpload={() => handleUpload(fixedSlotFile, 'fixed-slots')}
-          uploading={uploading}
-        />
+        <div className="upload-card">
+          <div className="file-icon">📄</div>
+          <h3>Fixed Slots File</h3>
+          <input
+            type="file"
+            accept=".xls,.xlsx,.csv"
+            onChange={handleFileChange(setFixedSlotFile)}
+            className="file-input"
+            id="fixedSlotFile"
+          />
+          <label htmlFor="fixedSlotFile" className="upload-button">
+            {fixedSlotFile ? fixedSlotFile.name : 'Choose File'}
+          </label>
+          <button
+            onClick={() => handleUpload(fixedSlotFile, 'fixed-slots')}
+            className="upload-button"
+            disabled={!fixedSlotFile}
+          >
+            Upload
+          </button>
+        </div>
       </div>
 
-      <button className="next-step-button" onClick={() => navigate('/timetable')}>
-        Next Step →
-      </button>
+      <button className="next-step-button">Next Step</button>
     </div>
   );
 };
-
-// ✅ Separated reusable card
-const UploadCard = ({ title, file, id, setFile, onUpload, uploading }) => (
-  <div className="upload-card">
-    <div className="file-icon">📄</div>
-    <h3>{title}</h3>
-    <input
-      type="file"
-      accept=".xls,.xlsx,.csv"
-      onChange={(e) => setFile(e.target.files[0])}
-      className="file-input"
-      id={id}
-    />
-    <label htmlFor={id} className="upload-button">
-      {file ? file.name : 'Choose File'}
-    </label>
-    <button
-      onClick={onUpload}
-      className="upload-button"
-      disabled={!file || uploading}
-    >
-      {uploading ? 'Uploading...' : 'Upload'}
-    </button>
-  </div>
-);
 
 export default UploadPage;
